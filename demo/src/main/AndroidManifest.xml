@@ -14,7 +14,7 @@
 
         <activity
             android:name=".view.DemoActivity"
-            android:label="StarWars"
+            android:label="@string/app_name"
             android:theme="@style/StarWarsAppTheme"
             android:screenOrientation="portrait">
             <intent-filter>
