@@ -4,11 +4,12 @@ import android.animation.Animator;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.graphics.Rect;
+import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.StyleRes;
 import android.support.design.widget.AppBarLayout;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.Fragment;
 import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,6 +24,11 @@ import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.widget.ImageView;
 
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+import com.squareup.seismic.ShakeDetector;
 import com.yalantis.starwars.TilesFrameLayout;
 import com.yalantis.starwars.interfaces.TilesFrameLayoutListener;
 import com.yalantis.starwarsdemo.R;
@@ -33,20 +39,21 @@ import com.yalantis.starwarsdemo.interfaces.TilesRendererInterface;
 import com.yalantis.starwarsdemo.model.User;
 import com.yalantis.starwarsdemo.widget.ClipRevealFrame;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-import butterknife.OnClick;
-
 /**
  * Created by Artem Kholodnyi on 11/19/15.
+ * modified by Muhammad Hakim A on 04/12/16
+ * adding shake listener and playing audio
  */
 public abstract class SideFragment extends Fragment implements ProfileAdapterListener,
-        TilesFrameLayoutListener {
+                                                               TilesFrameLayoutListener,
+                                                               ShakeDetector.Listener {
     public static final String ARG_CX = "cx";
     public static final String ARG_CY = "cy";
     public static final String ARG_SHOULD_EXPAND = "should expand";
     private static final long ANIM_DURATION = 250L;
+    private boolean crumbling = false;
     protected float mRadius;
+    private MediaPlayer mMediaPlayer;
     @Bind(R.id.recycler)
     RecyclerView mRecycler;
     @Bind(R.id.toolbar)
@@ -55,8 +62,6 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
     ImageView mHeader;
     @Bind(R.id.tessellation_frame_layout)
     TilesFrameLayout mTilesFrameLayout;
-    @Bind(R.id.collapsing_toolbar_layout)
-    CollapsingToolbarLayout mCollapsingToolbarLayout;
     @Bind(R.id.app_bar_layout)
     AppBarLayout mAppBarLayout;
     private View mRootView;
@@ -94,6 +99,14 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
             if (activity instanceof DemoActivityInterface) {
                 mDemoActivityInterface = (DemoActivityInterface) activity;
             }
+        }
+    }
+
+    @Override
+    public void hearShake() {
+        if (!crumbling) {
+            playAudio();
+            doBreak();
         }
     }
 
@@ -175,12 +188,13 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
         }
 
         ButterKnife.bind(this, mRootView);
+        mMediaPlayer = MediaPlayer.create(getActivity(), R.raw.lightsaber);
+        SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Activity.SENSOR_SERVICE);
+        ShakeDetector shakeDetector = new ShakeDetector(this);
+        shakeDetector.start(sensorManager);
+
         return mRootView;
     }
-
-
-
-
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
@@ -210,8 +224,6 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
     }
 
     abstract User getUser();
-
-
 
     @Override
     public void onDestroyView() {
@@ -265,12 +277,14 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
             mDemoActivityInterface.removeAllFragmentExcept(getTagString());
         }
         if (mTilesFrameLayout != null) {
+            crumbling = true;
             mTilesFrameLayout.startAnimation();
         }
     }
 
     @Override
     public void onAnimationFinished() {
+        crumbling = false;
         if (mTilesListener != null) {
             mTilesListener.onTilesFinished();
         }
@@ -281,5 +295,10 @@ public abstract class SideFragment extends Fragment implements ProfileAdapterLis
     @OnClick(R.id.btn_save)
     void onClick() {
         doBreak();
+    }
+
+    private void playAudio() {
+        mMediaPlayer.setVolume(1f, 1f);
+        mMediaPlayer.start();
     }
 }

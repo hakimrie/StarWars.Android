@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Star Wars</string>
+    <string name="app_name">Crumble</string>
     <string name="title_activity_star_wars">StarWarsActivity</string>
     <string name="action_settings">Settings</string>
     <string name="btn_setup_profile">Setup your profile</string>
